@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerenciamento de Categorias</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            padding: 0;
+            background: #f4f4f4;
+            color: #333;
+        }
+        table {
+            width: 100%;
+            margin-top: 20px;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        form {
+            background: white;
+            padding: 20px;
+            border-radius: 5px;
+        }
+        label {
+            margin-top: 10px;
+        }
+        input[type="text"], textarea {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+        }
+        button {
+            background: #5cb85c;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin-top: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #449d44;
+        }
+    </style>
+</head>
+<body>
+    <h1>Gerenciamento de Categorias</h1>
+    
+   
+    <form id="categoryForm">
+        <input type="hidden" id="categoryId" name="categoryId">
+        <label for="nome">Nome:</label>
+        <input type="text" id="nome" name="nome" required>
+        <label for="descricao">Descrição:</label>
+        <textarea id="descricao" name="descricao" required></textarea>
+        <button type="submit">Enviar</button>
+    </form>
+    
+  
+    <table>
+        <thead>
+            <tr>
+                <th>Nome</th>
+                <th>Descrição</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody id="categoriesTable">
+          
+        </tbody>
+    </table>
+
+    <script>
+        document.getElementById('categoryForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const categoryId = document.getElementById('categoryId').value;
+            const nome = document.getElementById('nome').value;
+            const descricao = document.getElementById('descricao').value;
+
+        
+            const data = { nome, descricao };
+            if (categoryId) {
+                data.id = categoryId; 
+                sendData(`/categories/${categoryId}`, data, 'PUT');
+            } else {
+                sendData('/categories', data, 'POST');
+            }
+        });
+
+        function sendData(url, data, method) {
+            fetch(url, {
+                method: method, 
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Sucesso:', data);
+               
+                loadData();
+            })
+            .catch((error) => {
+                console.error('Erro:', error);
+            });
+        }
+
+        function loadData() {
+            fetch('/categories')
+            .then(response => response.json())
+            .then(data => {
+                const tableBody = document.getElementById('categoriesTable');
+                tableBody.innerHTML = '';
+                data.forEach(category => {
+                    const row = `<tr>
+                                    <td>${category.nome}</td>
+                                    <td>${category.descricao}</td>
+                                    <td>
+                                        <button onclick="editCategory('${category.id}')">Editar</button>
+                                        <button onclick="deleteCategory('${category.id}')">Deletar</button>
+                                    </td>
+                                 </tr>`;
+                    tableBody.innerHTML += row;
+                });
+            })
+            .catch((error) => {
+                console.error('Erro:', error);
+            });
+        }
+
+        function editCategory(id) {
+            fetch(`/categories/${id}`)
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('categoryId').value = data.id;
+                document.getElementById('nome').value = data.nome;
+                document.getElementById('descricao').value = data.descricao;
+            })
+            .catch((error) => {
+                console.error('Erro:', error);
+            });
+        }
+
+        function deleteCategory(id) {
+            fetch(`/categories/${id}`, {
+                method: 'DELETE'
+            })
+            .then(() => {
+                console.log('Deletado com sucesso');
+                loadData(); 
+            })
+            .catch((error) => {
+                console.error('Erro:', error);
+            });
+        }
+
+      
+        loadData();
+    </script>
+</body>
+</html>
